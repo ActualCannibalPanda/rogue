@@ -1,5 +1,4 @@
 use bevy::{
-    color::palettes::tailwind,
     core::FrameCount,
     prelude::*,
     render::{
@@ -8,9 +7,7 @@ use bevy::{
     },
     window::WindowResolution,
 };
-
-#[derive(Debug, Component)]
-struct Player;
+use bevy_ecs_tilemap::prelude::*;
 
 fn main() {
     App::new()
@@ -37,8 +34,9 @@ fn main() {
                 })
                 .set(ImagePlugin::default_nearest()),
         )
-        .add_systems(Startup, (spawn_player))
-        .add_systems(Update, (make_visible))
+        .add_plugins(TilemapPlugin)
+        .add_systems(Startup, spawn_map)
+        .add_systems(Update, make_visible)
         .run();
 }
 
@@ -48,59 +46,58 @@ fn make_visible(mut window: Single<&mut Window>, frames: Res<FrameCount>) {
     }
 }
 
-fn spawn_player(
-    mut commands: Commands,
-    asset_server: Res<AssetServer>,
-    mut texture_atlas_layouts: ResMut<Assets<TextureAtlasLayout>>,
-) {
-    let handle = asset_server.load("sprites/minirogue.png");
-    let layout = TextureAtlasLayout::from_grid(UVec2::splat(8), 16, 13, None, None);
-    let texture_atlas_layout = texture_atlas_layouts.add(layout);
+const MAP: [[u32; 8]; 8] = [
+    [1, 1, 1, 1, 1, 1, 1, 1],
+    [1, 0, 0, 0, 0, 0, 0, 1],
+    [1, 0, 0, 0, 0, 0, 0, 1],
+    [1, 0, 0, 0, 0, 0, 0, 1],
+    [1, 0, 0, 0, 0, 0, 0, 1],
+    [1, 0, 0, 0, 0, 0, 0, 1],
+    [1, 0, 0, 0, 0, 0, 0, 1],
+    [1, 1, 1, 1, 1, 1, 1, 1],
+];
+
+fn spawn_map(mut commands: Commands, asset_server: Res<AssetServer>) {
     commands.spawn(Camera2d);
-    for y in 0..10 {
-        if y == 0 || y == 9 {
-            let y = y as f32;
-            for x in 0..10 {
-                let x = x as f32;
-                commands.spawn((
-                    Sprite::from_atlas_image(
-                        handle.clone(),
-                        TextureAtlas {
-                            layout: texture_atlas_layout.clone(),
-                            index: 1,
-                        },
-                    ),
-                    Player,
-                    Transform::from_xyz(x * 8.0, 1.0 + y * 8.0, 0.0),
-                    Visibility::default(),
-                ));
-            }
-        } else {
-            let y = y as f32;
-            commands.spawn((
-                Sprite::from_atlas_image(
-                    handle.clone(),
-                    TextureAtlas {
-                        layout: texture_atlas_layout.clone(),
-                        index: 1,
+
+    let handle = asset_server.load("sprites/minirogue.png");
+    let map_size = TilemapSize { x: 8, y: 8 };
+    let tilemap_entity = commands.spawn_empty().id();
+    let mut tile_storage = TileStorage::empty(map_size);
+
+    for x in 0..map_size.x {
+        for y in 0..map_size.y {
+            let tile_pos = TilePos { x, y };
+            let tile_index = MAP[x as usize][y as usize];
+            let tile_entity = commands
+                .spawn(TileBundle {
+                    position: tile_pos,
+                    texture_index: TileTextureIndex(tile_index),
+                    tilemap_id: TilemapId(tilemap_entity),
+                    visible: if tile_index == 0 {
+                        TileVisible(false)
+                    } else {
+                        TileVisible(true)
                     },
-                ),
-                Player,
-                Transform::from_xyz(0.0 + 0.0 * 8.0, 1.0 + y * 8.0, 0.0),
-                Visibility::default(),
-            ));
-            commands.spawn((
-                Sprite::from_atlas_image(
-                    handle.clone(),
-                    TextureAtlas {
-                        layout: texture_atlas_layout.clone(),
-                        index: 1,
-                    },
-                ),
-                Player,
-                Transform::from_xyz(0.0 + 9.0 * 8.0, 1.0 + y * 8.0, 0.0),
-                Visibility::default(),
-            ));
+                    ..Default::default()
+                })
+                .id();
+            tile_storage.set(&tile_pos, tile_entity);
         }
     }
+
+    let tile_size = TilemapTileSize { x: 8.0, y: 8.0 };
+    let grid_size = tile_size.into();
+    let map_type = TilemapType::default();
+
+    commands.entity(tilemap_entity).insert(TilemapBundle {
+        grid_size,
+        map_type,
+        size: map_size,
+        storage: tile_storage,
+        texture: TilemapTexture::Single(handle),
+        tile_size,
+        transform: get_tilemap_center_transform(&map_size, &grid_size, &map_type, 0.0),
+        ..Default::default()
+    });
 }
