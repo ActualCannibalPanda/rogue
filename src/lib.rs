@@ -1,13 +1,15 @@
 use bevy::{core::FrameCount, prelude::*};
 use bevy_ecs_tilemap::prelude::*;
+use bevy_egui::{egui, EguiContexts, EguiPlugin};
 
 pub struct GamePlugin;
 
 impl Plugin for GamePlugin {
     fn build(&self, app: &mut App) {
-        app.add_plugins(TilemapPlugin)
+        app.add_plugins(EguiPlugin)
+            .add_plugins(TilemapPlugin)
             .add_systems(Startup, spawn_map)
-            .add_systems(Update, make_visible);
+            .add_systems(Update, (make_visible, draw_ui));
     }
 }
 
@@ -15,6 +17,12 @@ fn make_visible(mut window: Single<&mut Window>, frames: Res<FrameCount>) {
     if frames.0 == 3 {
         window.visible = true;
     }
+}
+
+fn draw_ui(mut contexts: EguiContexts) {
+    egui::Window::new("Hello").show(contexts.ctx_mut(), |ui| {
+        ui.label("world");
+    });
 }
 
 const MAP: [[u32; 8]; 8] = [

@@ -8,7 +8,9 @@ exclude = ["assets"]
 
 [dependencies]
 bevy = { version = "0.15.1" }
+bevy_asset_loader = "0.22.0"
 bevy_ecs_tilemap = "0.15.0"
+bevy_egui = "0.32.0"
 log = { version = "*", features = [
     "max_level_debug",
     "release_max_level_warn",
