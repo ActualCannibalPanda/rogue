@@ -19,10 +19,12 @@ fn make_visible(mut window: Single<&mut Window>, frames: Res<FrameCount>) {
     }
 }
 
-fn draw_ui(mut contexts: EguiContexts) {
-    egui::Window::new("Hello").show(contexts.ctx_mut(), |ui| {
-        ui.label("world");
-    });
+fn draw_ui(mut _contexts: EguiContexts) {
+    // leaving this here as an example for later, just gets in the way currently
+
+    // egui::Window::new("Hello").show(contexts.ctx_mut(), |ui| {
+    //     ui.label("world");
+    // });
 }
 
 const MAP: [[u32; 8]; 8] = [
