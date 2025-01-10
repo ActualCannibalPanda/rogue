@@ -1,6 +1,9 @@
+mod map;
+
 use bevy::{core::FrameCount, prelude::*};
 use bevy_ecs_tilemap::prelude::*;
 use bevy_egui::{egui, EguiContexts, EguiPlugin};
+use map::MapBuilder;
 
 pub struct GamePlugin;
 
@@ -66,6 +69,8 @@ fn spawn_map(mut commands: Commands, asset_server: Res<AssetServer>) {
             tile_storage.set(&tile_pos, tile_entity);
         }
     }
+
+    let map = MapBuilder::default().depth(3).build();
 
     let tile_size = TilemapTileSize { x: 8.0, y: 8.0 };
     let grid_size = tile_size.into();
